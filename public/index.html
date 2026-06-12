@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instant Data Store</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h2>Instant Data Bundles</h2>
+    <div class="subtitle">Enter details to send data instantly</div>
+    
+    <label>Select Network</label>
+    <div class="network-selector">
+        <div id="btn-mtn" class="network-card mtn selected" onclick="selectNetwork('mtn', 'mtn')">MTN</div>
+        <div id="btn-at" class="network-card at" onclick="selectNetwork('at', 'tigo')">AT</div>
+        <div id="btn-telecel" class="network-card telecel" onclick="selectNetwork('telecel', 'vodafone')">Telecel</div>
+    </div>
+
+    <label for="bundle">Select Package</label>
+    <select id="bundle"></select>
+
+    <label for="phone">Recipient MoMo Number</label>
+    <input type="tel" id="phone" placeholder="e.g. 0241234567" maxlength="10">
+
+    <button id="buyBtn" onclick="placeOrder()">Place Order</button>
+    <div id="statusMessage" class="status-box" style="display: none;"></div>
+</div>
+
+<script>
+    // 1. EXACT PRICE MENUS ASSIGNED DIRECTLY TO MB VALUES FOR HUBNET
+    const dataMenu = {
+        mtn: [
+            { label: "1 GB — GHS 4.80", volume: "1000", price: "4.80" },
+            { label: "2 GB — GHS 9.00", volume: "2000", price: "9.00" },
+            { label: "3 GB — GHS 13.70", volume: "3000", price: "13.70" },
+            { label: "4 GB — GHS 20.00", volume: "4000", price: "20.00" },
+            { label: "5 GB — GHS 24.00", volume: "5000", price: "24.00" },
+            { label: "6 GB — GHS 27.00", volume: "6000", price: "27.00" },
+            { label: "8 GB — GHS 38.00", volume: "8000", price: "38.00" },
+            { label: "10 GB — GHS 42.00", volume: "10000", price: "42.00" },
+            { label: "15 GB — GHS 59.00", volume: "15000", price: "59.00" },
+            { label: "20 GB — GHS 80.00", volume: "20000", price: "80.00" },
+            { label: "25 GB — GHS 105.00", volume: "25000", price: "105.00" },
+            { label: "30 GB — GHS 125.00", volume: "30000", price: "125.00" },
+            { label: "40 GB — GHS 162.00", volume: "40000", price: "162.00" },
+            { label: "50 GB — GHS 200.00", volume: "50000", price: "200.00" }
+        ],
+        at: [
+            { label: "1 GB — GHS 4.70", volume: "1000", price: "4.70" },
+            { label: "2 GB — GHS 9.40", volume: "2000", price: "9.40" },
+            { label: "3 GB — GHS 13.10", volume: "3000", price: "13.10" },
+            { label: "4 GB — GHS 18.80", volume: "4000", price: "18.80" },
+            { label: "5 GB — GHS 23.50", volume: "5000", price: "23.50" },
+            { label: "6 GB — GHS 28.20", volume: "6000", price: "28.20" },
+            { label: "8 GB — GHS 34.60", volume: "8000", price: "34.60" },
+            { label: "9 GB — GHS 38.30", volume: "9000", price: "38.30" },
+            { label: "10 GB — GHS 42.00", volume: "10000", price: "42.00" },
+            { label: "12 GB — GHS 49.40", volume: "12000", price: "49.40" },
+            { label: "15 GB — GHS 60.50", volume: "15000", price: "60.50" },
+            { label: "20 GB — GHS 79.00", volume: "20000", price: "79.00" },
+            { label: "25 GB — GHS 99.50", volume: "25000", price: "99.50" },
+            { label: "30 GB — GHS 119.00", volume: "30000", price: "119.00" },
+            { label: "40 GB — GHS 152.00", volume: "40000", price: "152.00" },
+            { label: "50 GB — GHS 192.00", volume: "50000", price: "192.00" }
+        ],
+        telecel: [
+            { label: "5 GB — GHS 20.00", volume: "5000", price: "20.00" },
+            { label: "10 GB — GHS 38.50", volume: "10000", price: "38.50" },
+            { label: "15 GB — GHS 56.00", volume: "15000", price: "56.00" },
+            { label: "20 GB — GHS 72.50", volume: "20000", price: "72.50" },
+            { label: "30 GB — GHS 107.50", volume: "30000", price: "107.50" },
+            { label: "40 GB — GHS 142.00", volume: "40000", price: "142.00" },
+            { label: "50 GB — GHS 179.00", volume: "50000", price: "179.00" },
+            { label: "100 GB — GHS 346.00", volume: "100000", price: "346.00" }
+        ]
+    };
+
+    let activeNetwork = 'mtn';
+    let activeProvider = 'mtn';
+
+    function populatePackages(networkKey) {
+        const bundleSelect = document.getElementById('bundle');
+        bundleSelect.innerHTML = ""; 
+        dataMenu[networkKey].forEach(pkg => {
+            const option = document.createElement('option');
+            option.value = pkg.volume;
+            option.setAttribute('data-price', pkg.price);
+            option.textContent = pkg.label;
+            bundleSelect.appendChild(option);
+        });
+    }
+
+    function selectNetwork(network, provider) {
+        activeNetwork = network;
+        activeProvider = provider;
+        
+        document.querySelectorAll('.network-card').forEach(card => card.classList.remove('selected'));
+        document.getElementById(`btn-${network}`).classList.add('selected');
+
+        populatePackages(network);
+    }
+
+    window.onload = function() {
+        populatePackages('mtn');
+    };
+
+    async function placeOrder() {
+        const bundleSelect = document.getElementById('bundle');
+        const phone = document.getElementById('phone').value;
+        const volume = bundleSelect.value;
+        const amount = bundleSelect.options[bundleSelect.selectedIndex].getAttribute('data-price');
+        const statusBox = document.getElementById('statusMessage');
+
+        if(phone.length !== 10) {
+            alert("Please enter a valid 10-digit phone number.");
+            return;
+        }
+
+        document.getElementById('buyBtn').disabled = true;
+        statusBox.style.display = "block";
+        statusBox.className = "status-box loading";
+        statusBox.innerHTML = "Processing order... Keep your phone unlocked!";
+
+        // FIX: Explicit mapping format so backend string matching works perfectly
+        let backendNetworkString = "MTN";
+        if(activeNetwork === 'at') backendNetworkString = "AT";
+        if(activeNetwork === 'telecel') backendNetworkString = "Telecel";
+
+        try {
+            const response = await fetch('/api/initiate-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    phone, 
+                    network: backendNetworkString, 
+                    volume, 
+                    amount, 
+                    provider: activeProvider 
+                })
+            });
+            
+            const result = await response.json();
+            if(result.success) {
+                statusBox.className = "status-box success";
+                statusBox.innerHTML = "⚡ Check your phone right now to enter your MoMo PIN!";
+            } else {
+                alert("Error: " + result.message);
+                resetForm();
+            }
+        } catch (err) {
+            alert("Connection error. Try again.");
+            resetForm();
+        }
+    }
+
+    function resetForm() {
+        document.getElementById('buyBtn').disabled = false;
+        document.getElementById('statusMessage').style.display = 'none';
+    }
+</script>
+</body>
+</html>
